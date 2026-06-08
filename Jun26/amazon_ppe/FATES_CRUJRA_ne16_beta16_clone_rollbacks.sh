@@ -17,8 +17,13 @@ dosubmit=1
 # 0: do not submit
 
 forcenewcase=0
+force_base_rebuild=0  # if 1, rerun the default case build even when BUILD_COMPLETE is TRUE
 
-echo "clone setup, submit, forcenewcase:", $dosetup, $dosubmit, $forcenewcase
+stop_option="nyears"
+stop_n=3
+resubmit_n=7
+
+echo "clone setup, submit, forcenewcase, force_base_rebuild:", $dosetup, $dosubmit, $forcenewcase, $force_base_rebuild
 
 USER="rosief"
 noresmrepo="ctsm5.4.036_noresm_v0_control"
@@ -50,20 +55,63 @@ tags=(default CSTARV GRAZ MORT RAD)
 
 for tag in "${tags[@]}"; do
     if [[ "$tag" == "default" ]]; then
-        echo "Running default case workflow for date $rundate"
-
-        NAME_OVERRIDE="default" \
-        RUNDATE_OVERRIDE="$rundate" \
-        DOSETUP1_OVERRIDE="$dosetup" \
-        DOSETUP2_OVERRIDE="$dosetup" \
-        DOSETUP3_OVERRIDE="$dosetup" \
-        DOSUBMIT_OVERRIDE="$dosubmit" \
-        FORCENEWCASE_OVERRIDE="$forcenewcase" \
-        bash "$default_driver"
+        if [[ -d "$base_case" && $force_base_rebuild -eq 0 ]]; then
+            if [[ ! -x "$base_case/xmlquery" ]]; then
+                echo "xmlquery missing in base case: $base_case/xmlquery"
+                exit 1
+            fi
+            base_build_complete="$(cd "$base_case" && ./xmlquery BUILD_COMPLETE --value)"
+            if [[ "$base_build_complete" == "TRUE" ]]; then
+                echo "Default base case already built; skipping rebuild: $base_case"
+            else
+                echo "Base case exists but BUILD_COMPLETE is not TRUE; rebuilding default case"
+                NAME_OVERRIDE="default" \
+                RUNDATE_OVERRIDE="$rundate" \
+                DOSETUP1_OVERRIDE=1 \
+                DOSETUP2_OVERRIDE=1 \
+                DOSETUP3_OVERRIDE=1 \
+                DOSUBMIT_OVERRIDE=0 \
+                FORCENEWCASE_OVERRIDE=1 \
+                bash "$default_driver"
+            fi
+        else
+            if [[ $force_base_rebuild -eq 1 && -d "$base_case" ]]; then
+                echo "Force rebuild requested; removing existing base case: $base_case"
+                rm -rf "$base_case"
+                rm -rf "/cluster/work/projects/nn9560k/$USER/noresm/$base_name"
+                rm -rf "/cluster/work/projects/nn9560k/$USER/archive/$base_name"
+            fi
+            echo "Running default case workflow for date $rundate"
+            NAME_OVERRIDE="default" \
+            RUNDATE_OVERRIDE="$rundate" \
+            DOSETUP1_OVERRIDE=1 \
+            DOSETUP2_OVERRIDE=1 \
+            DOSETUP3_OVERRIDE=1 \
+            DOSUBMIT_OVERRIDE=0 \
+            FORCENEWCASE_OVERRIDE=1 \
+            bash "$default_driver"
+        fi
 
         if [[ ! -d "$base_case" ]]; then
             echo "Default case was not created: $base_case"
             exit 1
+        fi
+
+        cd "$base_case"
+        ./xmlchange STOP_OPTION="$stop_option"
+        ./xmlchange STOP_N="$stop_n"
+        ./xmlchange RESUBMIT="$resubmit_n"
+        ./case.setup
+        ./preview_namelists
+        ./preview_run
+
+        if [[ $dosubmit -eq 1 ]]; then
+            if ./case.submit; then
+                echo "Submitted default"
+            else
+                echo "Submission failed for default"
+                exit 1
+            fi
         fi
 
         # For --keepexe clones we need a built base executable when setup is on.
@@ -72,7 +120,7 @@ for tag in "${tags[@]}"; do
                 echo "xmlquery missing in base case: $base_case/xmlquery"
                 exit 1
             fi
-            base_exeroot="$($base_case/xmlquery EXEROOT --value)"
+            base_exeroot="$(cd "$base_case" && ./xmlquery EXEROOT --value)"
             base_exe="$base_exeroot/cesm.exe"
             if [[ ! -x "$base_exe" ]]; then
                 echo "Base case appears unbuilt, missing: $base_exe"
@@ -123,15 +171,26 @@ for tag in "${tags[@]}"; do
 
         echo "fates_paramfile='$param_file'" >> user_nl_clm
 
-        # Regenerate namelists after user_nl_clm changes.
+        # Ensure run-control settings are carried into cloned cases.
+        ./xmlchange STOP_OPTION="$stop_option"
+        ./xmlchange STOP_N="$stop_n"
+        ./xmlchange RESUBMIT="$resubmit_n"
+
+        # Regenerate case metadata, namelists, and batch/run scripts after user_nl_clm changes.
+        ./case.setup
         ./preview_namelists
+        ./preview_run
 
         echo "Configured $clone_name with $param_file"
     fi
 
     if [[ $dosubmit -eq 1 ]]; then
         cd "$clone_case"
-        ./case.submit
-        echo "Submitted $clone_name"
+        if ./case.submit; then
+            echo "Submitted $clone_name"
+        else
+            echo "Submission failed for $clone_name"
+            exit 1
+        fi
     fi
 done

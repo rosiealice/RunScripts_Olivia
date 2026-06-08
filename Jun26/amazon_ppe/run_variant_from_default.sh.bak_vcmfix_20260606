@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [[ $# -ne 1 ]]; then
-  echo "Usage: $0 <CSTARV|GRAZ|MORT|RAD|VCM|GRR|MDSL>" >&2
+  echo "Usage: $0 <CSTARV|GRAZ|MORT|RAD|VCM>" >&2
   exit 1
 fi
 
@@ -27,19 +27,11 @@ trap 'rm -f "$TMP_SCRIPT"' EXIT
 awk -v tag="$TAG" -v param_file="$PARAM_FILE" '
 BEGIN { inserted = 0 }
 {
-  # Handle current default-script pattern: name="${NAME_OVERRIDE:-default}"
-  if ($0 ~ /^[[:space:]]*name=\"\$\{NAME_OVERRIDE:-[^}]+\}\"/) {
-    print "name=\"${NAME_OVERRIDE:-" tag "}\" #name of this setup, used for naming the case and directories."
-    next
-  }
-
-  # Backward-compatible fallback for older pattern: name='default'
   if ($0 ~ /^[[:space:]]*name='\''[^'\'']*'\''/) {
-    print "name='\''" tag "'\'' #name of this setup, used for naming the case and directories."
+    print "name='\''" tag "'\'' #name of this setup, used for naming the case and directories. "
     next
   }
 
-  # Remove any existing fates_paramfile assignment before reinserting one.
   if ($0 ~ /^[[:space:]]*fates_paramfile[[:space:]]*=/) {
     next
   }

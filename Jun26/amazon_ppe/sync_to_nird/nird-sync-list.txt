@@ -1,0 +1,8 @@
+
+/cluster/work/projects/nn9560k/rosief/archive/amazon_ppe.ne16pg3_tn14.ctsm5.4.036_noresm_v0.CRUJRA_actual2000_default.2026-06-06
+/cluster/work/projects/nn9560k/rosief/archive/amazon_ppe.ne16pg3_tn14.ctsm5.4.036_noresm_v0.CRUJRA_actual2000_VCM.2026-06-06
+/cluster/work/projects/nn9560k/rosief/archive/amazon_ppe.ne16pg3_tn14.ctsm5.4.036_noresm_v0.CRUJRA_actual2000_GRAZ.2026-06-06
+/cluster/work/projects/nn9560k/rosief/archive/amazon_ppe.ne16pg3_tn14.ctsm5.4.036_noresm_v0.CRUJRA_actual2000_MORT.2026-06-06
+/cluster/work/projects/nn9560k/rosief/archive/amazon_ppe.ne16pg3_tn14.ctsm5.4.036_noresm_v0.CRUJRA_actual2000_GRR.2026-06-06
+/cluster/work/projects/nn9560k/rosief/archive/amazon_ppe.ne16pg3_tn14.ctsm5.4.036_noresm_v0.CRUJRA_actual2000_MDSL.2026-06-06
+

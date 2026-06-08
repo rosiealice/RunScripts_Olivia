@@ -1,12 +1,10 @@
 #!/bin/bash
 set -euo pipefail
-
-cd /cluster/home/rosief/git/RunScripts_Olivia/Jun26/amazon_ppe
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
 
 bash FATES_CRUJRA_ne16_beta16_default.sh
-
-bash FATES_CRUJRA_ne16_beta16_CSTARV.sh
 bash FATES_CRUJRA_ne16_beta16_GRAZ.sh
 bash FATES_CRUJRA_ne16_beta16_MORT.sh
-bash FATES_CRUJRA_ne16_beta16_RAD.sh
 bash FATES_CRUJRA_ne16_beta16_VCM.sh
+bash FATES_CRUJRA_ne16_beta16_GRR.sh
